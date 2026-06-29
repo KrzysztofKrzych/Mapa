@@ -4,28 +4,71 @@
 <meta charset="UTF-8">
 
 <style>
-  body {
-    margin: 0;
-    padding: 0;
+  body { 
+    margin: 0; 
+    padding: 0; 
     font-family: Arial;
-    background: #f0f0f0;
   }
 
+  /* Panel z listą */
+  #panel {
+    width: 320px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    background: #fafafa;
+    position: fixed;
+    left: 10px;
+    top: 10px;
+    z-index: 1000;
+  }
+
+  #search {
+    width: 100%;
+    padding: 6px;
+    margin-bottom: 10px;
+  }
+
+  #opcje {
+    width: 100%;
+    padding: 8px;
+  }
+
+  .kafelek {
+    padding: 8px 10px;
+    background: #dce6ff;
+    border: 1px solid #8aa2ff;
+    border-radius: 6px;
+    margin-top: 10px;
+    cursor: grab;
+    width: fit-content;
+    display: inline-block;
+  }
+
+  /* Kontener z suwakami */
+  #mapContainer {
+    position: absolute;
+    left: 350px;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    overflow: scroll;   /* ⭐ SUWAKI */
+    background: #ddd;
+  }
+
+  /* Mapa wewnątrz kontenera */
   #mapa {
     position: relative;
-    width: 1536px;
-    height: 1024px;
-    margin: 20px auto;
-    border: 2px solid #ccc;
-    background: #fff;
+    width: 5000px;   /* duża grafika */
+    height: auto;
   }
 
   #mapa img {
-    width: 1536px;
-    height: 1024px;
+    width: 5000px;
+    height: auto;
     display: block;
   }
 
+  /* Piny */
   .pin {
     width: 24px;
     height: 24px;
@@ -41,14 +84,71 @@
 
 <body>
 
-<div id="mapa">
-  <img src="https://krzysztofkrzych.github.io/Mapa/Mapa.jpg" id="mapImage">
+<!-- PANEL -->
+<div id="panel">
+  <input type="text" id="search" placeholder="Szukaj urządzenia...">
+
+  <select id="opcje">
+    <option value="">-- wybierz urządzenie --</option>
+    <option>B247/P189 – GWINCIARKA 1 GWINCIARKA CMARNRM-20.400</option>
+    <option>B250/P192 – GWINCIARKA 2 GWINCIARKA PNEUM.CMA RNRM 20.400+STÓŁ PODZIAŁOWY</option>
+    <option>B25/P31 – GWINCIARKA 3 GWIŃCIARKA GWD</option>
+    <option>B366/P305 – INW W OBCYM ŚRODKU TRWAŁYM 2 (MONTAŻ TRUELASER 3030)</option>
+    <option>B12/P15 – KABINA KP-P KABINA KP-P GDAŃSK</option>
+    <option>B345/P287 – KABINA PROSZKOWA</option>
+    <option>B241/P183 – KOMORA ŚRUTOWNICZA PNEUMATYCZNA</option>
+    <option>B358/P300 – KOMPUTER 1 STACJA ROBOCZA HP Z4 G4 WKS</option>
+  </select>
+
+  <div id="wynik"></div>
+</div>
+
+<!-- MAPA -->
+<div id="mapContainer">
+  <div id="mapa">
+    <img src="https://krzysztofkrzych.github.io/Mapa/Mapa.jpg" id="mapImage">
+  </div>
 </div>
 
 <script>
+/* Wyszukiwarka */
+document.getElementById('search').addEventListener('input', function() {
+  const filter = this.value.toLowerCase();
+  const dropdown = document.getElementById('opcje');
+
+  for (let i = 0; i < dropdown.options.length; i++) {
+    const txt = dropdown.options[i].text.toLowerCase();
+    dropdown.options[i].style.display = txt.includes(filter) ? '' : 'none';
+  }
+});
+
+/* Tworzenie kafelka po wyborze */
+document.getElementById('opcje').addEventListener('change', function() {
+  const val = this.value;
+  if (!val) return;
+
+  const kafelek = document.createElement('div');
+  kafelek.className = 'kafelek';
+  kafelek.textContent = val;
+  kafelek.draggable = true;
+
+  document.getElementById('wynik').appendChild(kafelek);
+
+  this.remove(this.selectedIndex);
+
+  kafelek.addEventListener('dragstart', () => {
+    window.przeciagany = kafelek;
+  });
+});
+
+/* Dodawanie pinów */
 const mapa = document.getElementById('mapa');
 
-mapa.addEventListener('click', e => {
+mapa.addEventListener('dragover', e => e.preventDefault());
+
+mapa.addEventListener('drop', e => {
+  e.preventDefault();
+
   const rect = mapa.getBoundingClientRect();
   const x = e.clientX - rect.left;
   const y = e.clientY - rect.top;
@@ -57,7 +157,41 @@ mapa.addEventListener('click', e => {
   pin.className = 'pin';
   pin.style.left = x + 'px';
   pin.style.top = y + 'px';
+
+  /* opis po najechaniu */
+  pin.title = window.przeciagany.textContent;
+
+  /* ⭐ klik = usuń pin */
+  pin.onclick = () => pin.remove();
+
   mapa.appendChild(pin);
+
+  window.przeciagany.remove();
+  window.przeciagany = null;
+});
+
+/* ⭐ PRZESUWANIE TYLKO PRZY TRZYMANIU MYSZY */
+let isDragging = false;
+let startScrollLeft, startScrollTop;
+
+mapa.addEventListener('mousedown', e => {
+  isDragging = true;
+  startScrollLeft = mapContainer.scrollLeft;
+  startScrollTop = mapContainer.scrollTop;
+  startX = e.clientX;
+  startY = e.clientY;
+});
+
+document.addEventListener('mouseup', () => {
+  isDragging = false;
+});
+
+document.addEventListener('mousemove', e => {
+  if (!isDragging) return;
+  const dx = e.clientX - startX;
+  const dy = e.clientY - startY;
+  mapContainer.scrollLeft = startScrollLeft - dx;
+  mapContainer.scrollTop = startScrollTop - dy;
 });
 </script>
 
