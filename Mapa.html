@@ -11,7 +11,7 @@
     overflow: hidden;
   }
 
-  /* Panel z listą */
+  /* PANEL */
   #panel {
     width: 320px;
     padding: 10px;
@@ -45,7 +45,7 @@
     display: inline-block;
   }
 
-  /* Kontener z SUWAKAMI */
+  /* SUWAKI */
   #mapContainer {
     position: absolute;
     left: 350px;
@@ -56,10 +56,10 @@
     background: #ddd;
   }
 
-  /* Mapa wewnątrz kontenera */
+  /* MAPA */
   #mapa {
     position: relative;
-    width: 5000px;   /* duża grafika */
+    width: 5000px;
     height: auto;
   }
 
@@ -69,7 +69,7 @@
     display: block;
   }
 
-  /* Piny */
+  /* PINY */
   .pin {
     width: 24px;
     height: 24px;
@@ -260,7 +260,7 @@ document.getElementById('search').addEventListener('input', function() {
   }
 });
 
-/* Tworzenie kafelka po wyborze */
+/* Tworzenie kafelka */
 document.getElementById('opcje').addEventListener('change', function() {
   const val = this.value;
   if (!val) return;
@@ -296,10 +296,9 @@ mapa.addEventListener('drop', e => {
   pin.style.left = x + 'px';
   pin.style.top = y + 'px';
 
-  /* opis po najechaniu */
   pin.title = window.przeciagany.textContent;
 
-  /* klik = usuń pin */
+  /* ⭐ klik = usuń pin */
   pin.onclick = () => pin.remove();
 
   mapa.appendChild(pin);
@@ -308,14 +307,13 @@ mapa.addEventListener('drop', e => {
   window.przeciagany = null;
 });
 
-/* ⭐ PRZESUWANIE TYLKO PRZY TRZYMANIU MYSZY + SUWAKI */
+/* ⭐ PRZESUWANIE TYLKO PRZY TRZYMANIU MYSZY */
 const mapContainer = document.getElementById('mapContainer');
 let isDragging = false;
 let startScrollLeft, startScrollTop, startX, startY;
 
-mapa.addEventListener('mousedown', e => {
-  // nie zaczynaj przesuwania, jeśli klikamy na pin
-  if (e.target.classList.contains('pin')) return;
+mapContainer.addEventListener('mousedown', e => {
+  if (e.target.classList.contains('pin')) return;  // nie ruszaj mapy gdy klikam pin
 
   isDragging = true;
   startScrollLeft = mapContainer.scrollLeft;
