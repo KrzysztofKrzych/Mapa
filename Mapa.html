@@ -307,7 +307,6 @@ function savePins() {
 /* KLIK DZIAŁAJĄCY — Z BLOKOWANIEM PROPAGACJI */
 function attachPinClick(pin) {
 
-  /* BLOKADA PRZECHWYTYWANIA KLIKNIĘCIA PRZEZ MAPĘ */
   pin.addEventListener("mousedown", e => e.stopPropagation());
   pin.addEventListener("click", e => e.stopPropagation());
 
