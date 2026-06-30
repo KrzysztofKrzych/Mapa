@@ -96,7 +96,6 @@
 
 <div id="panel">
   <input type="text" id="search" placeholder="Szukaj urządzenia...">
-
   <select id="opcje">
     <option value="">-- wybierz urządzenie --</option>
 <option>B247/P189 – GWINCIARKA 1 GWINCIARKA CMARNRM-20.400</option>
@@ -314,21 +313,17 @@ function loadPins() {
     pin.style.top = p.y;
     pin.title = p.title;
 
-    /* NOWE: potwierdzenie usunięcia */
     pin.onclick = () => {
-      if (!confirm("Czy na pewno chcesz usunąć ten znacznik?")) return;
-
       const option = document.createElement('option');
       option.textContent = pin.title;
       dropdown.appendChild(option);
-
       pin.remove();
       savePins();
     };
 
     mapa.appendChild(pin);
 
-    /* Usuwanie opcji z listy, jeśli pin istnieje */
+    /* USUWANIE OPCJI Z LISTY, JEŚLI PIN ISTNIEJE */
     for (let i = 0; i < dropdown.options.length; i++) {
       if (dropdown.options[i].text === p.title) {
         dropdown.remove(i);
@@ -359,14 +354,10 @@ mapa.addEventListener('drop', e => {
   pin.style.top = y + "px";
   pin.title = window.przeciagany.textContent;
 
-  /* NOWE: potwierdzenie usunięcia */
   pin.onclick = () => {
-    if (!confirm("Czy na pewno chcesz usunąć ten znacznik?")) return;
-
     const option = document.createElement('option');
     option.textContent = pin.title;
     dropdown.appendChild(option);
-
     pin.remove();
     savePins();
   };
