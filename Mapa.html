@@ -3,20 +3,33 @@
 <head>
 <meta charset="UTF-8">
 <style>
-  body { margin: 0; font-family: Arial; }
-
+  body { 
+    font-family: Arial; 
+    margin: 0; 
+    padding: 0; 
+    overflow: hidden;
+  }
   #panel {
+    width: 320px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    background: #fafafa;
     position: absolute;
     left: 10px;
     top: 10px;
     z-index: 1000;
-    background: #fafafa;
-    padding: 10px;
-    border: 1px solid #ccc;
-    width: 320px;
   }
 
-  #opcje { width: 100%; padding: 8px; }
+  #search {
+    width: 100%;
+    padding: 6px;
+    margin-bottom: 10px;
+  }
+
+  #opcje {
+    width: 100%;
+    padding: 8px;
+  }
 
   .kafelek {
     padding: 8px 10px;
@@ -25,6 +38,7 @@
     border-radius: 6px;
     margin-top: 10px;
     cursor: grab;
+    width: fit-content;
     display: inline-block;
   }
 
@@ -43,9 +57,11 @@
   }
 
   #mapa img {
-    width: 2000px;
+    width: 5000px;
     height: auto;
     display: block;
+    position: relative;
+    z-index: 1;
   }
 
   .pin {
@@ -57,7 +73,21 @@
     position: absolute;
     transform: translate(-50%, -100%);
     cursor: pointer;
-    pointer-events: auto; /* KLUCZOWE */
+    z-index: 2;
+  }
+
+  #zoomPanel {
+    position: absolute;
+    right: 20px;
+    top: 20px;
+    z-index: 2000;
+  }
+
+  #zoomPanel button {
+    width: 40px;
+    height: 40px;
+    font-size: 22px;
+    margin: 3px;
   }
 </style>
 </head>
@@ -65,6 +95,8 @@
 <body>
 
 <div id="panel">
+  <input type="text" id="search" placeholder="Szukaj urządzenia...">
+
   <select id="opcje">
     <option value="">-- wybierz urządzenie --</option>
 <option>B247/P189 – GWINCIARKA 1 GWINCIARKA CMARNRM-20.400</option>
@@ -217,110 +249,129 @@
   <div id="wynik"></div>
 </div>
 
+<div id="zoomPanel">
+  <button id="zoomIn">+</button>
+  <button id="zoomOut">−</button>
+</div>
+
 <div id="mapContainer">
   <div id="mapa">
-    <img src="https://via.placeholder.com/2000x1200.png?text=MAPA">
+    <img src="Mapa.jpg" id="mapImage">
   </div>
 </div>
 
 <script>
-const mapa = document.getElementById("mapa");
-const dropdown = document.getElementById("opcje");
-const wynik = document.getElementById("wynik");
-let zoom = 1;
+/* Wyszukiwarka */
+document.getElementById('search').addEventListener('input', function() {
+  const filter = this.value.toLowerCase();
+  const dropdown = document.getElementById('opcje');
+
+  for (let i = 0; i < dropdown.options.length; i++) {
+    const txt = dropdown.options[i].text.toLowerCase();
+    dropdown.options[i].style.display = txt.includes(filter) ? '' : 'none';
+  }
+});
 
 /* Tworzenie kafelka */
-dropdown.addEventListener("change", function () {
+document.getElementById('opcje').addEventListener('change', function() {
   const val = this.value;
   if (!val) return;
 
-  const kafelek = document.createElement("div");
-  kafelek.className = "kafelek";
+  const kafelek = document.createElement('div');
+  kafelek.className = 'kafelek';
   kafelek.textContent = val;
   kafelek.draggable = true;
-  wynik.appendChild(kafelek);
+
+  document.getElementById('wynik').appendChild(kafelek);
 
   this.remove(this.selectedIndex);
 
-  kafelek.addEventListener("dragstart", () => {
+  kafelek.addEventListener('dragstart', () => {
     window.przeciagany = kafelek;
   });
 });
 
-/* Zapis pinów */
+/* PINY + ZAPIS */
+const mapa = document.getElementById('mapa');
+const dropdown = document.getElementById('opcje');
+const mapContainer = document.getElementById('mapContainer');
+
 function savePins() {
-  const pins = [...document.querySelectorAll(".pin")].map(pin => ({
-    x: pin.dataset.x,
-    y: pin.dataset.y,
+  const pins = [...document.querySelectorAll('.pin')].map(pin => ({
+    x: pin.style.left,
+    y: pin.style.top,
     title: pin.title
   }));
   localStorage.setItem("pins", JSON.stringify(pins));
 }
 
-/* Kliknięcie w pin */
+/* FUNKCJA KLIKNIĘCIA — DZIAŁAJĄCA, Z POTWIERDZENIEM, BEZ DUPLIKATÓW */
 function attachPinClick(pin) {
-  pin.addEventListener("mousedown", () => {   /* KLUCZOWE: mousedown zamiast click */
-    if (!confirm("Usunąć pin?")) return;
+  pin.onclick = () => {
 
-    const title = pin.title;
+    if (!confirm("Czy na pewno chcesz usunąć ten znacznik?")) return;
+
+    /* USUNIĘCIE DUPLIKATÓW Z LISTY */
+    for (let i = 0; i < dropdown.options.length; i++) {
+      if (dropdown.options[i].text === pin.title) {
+        dropdown.remove(i);
+        break;
+      }
+    }
+
+    /* DODANIE OPCJI TYLKO RAZ */
+    const option = document.createElement('option');
+    option.textContent = pin.title;
+    dropdown.appendChild(option);
+
     pin.remove();
-
-    const opt = document.createElement("option");
-    opt.value = title;
-    opt.textContent = title;
-    dropdown.appendChild(opt);
-
     savePins();
-  });
+  };
 }
 
-/* Wczytywanie pinów */
 function loadPins() {
   const pins = JSON.parse(localStorage.getItem("pins") || "[]");
 
   pins.forEach(p => {
-    const pin = document.createElement("div");
-    pin.className = "pin";
+    const pin = document.createElement('div');
+    pin.className = 'pin';
+    pin.style.left = p.x;
+    pin.style.top = p.y;
     pin.title = p.title;
-
-    pin.dataset.x = p.x;
-    pin.dataset.y = p.y;
-
-    pin.style.left = (p.x * zoom) + "px";
-    pin.style.top = (p.y * zoom) + "px";
 
     attachPinClick(pin);
     mapa.appendChild(pin);
 
+    /* USUWANIE OPCJI Z LISTY, JEŚLI PIN ISTNIEJE */
     for (let i = 0; i < dropdown.options.length; i++) {
-      if (dropdown.options[i].value === p.title) {
+      if (dropdown.options[i].text === p.title) {
         dropdown.remove(i);
         break;
       }
     }
   });
 }
+
 loadPins();
 
 /* Dodawanie pinów */
-mapa.addEventListener("dragover", e => e.preventDefault());
+mapa.addEventListener('dragover', e => e.preventDefault());
 
-mapa.addEventListener("drop", e => {
+let zoom = 1;
+
+mapa.addEventListener('drop', e => {
   e.preventDefault();
 
   const rect = mapa.getBoundingClientRect();
+
   const x = (e.clientX - rect.left) / zoom;
   const y = (e.clientY - rect.top) / zoom;
 
-  const pin = document.createElement("div");
-  pin.className = "pin";
+  const pin = document.createElement('div');
+  pin.className = 'pin';
+  pin.style.left = x + "px";
+  pin.style.top = y + "px";
   pin.title = window.przeciagany.textContent;
-
-  pin.dataset.x = x;
-  pin.dataset.y = y;
-
-  pin.style.left = (x * zoom) + "px";
-  pin.style.top = (y * zoom) + "px";
 
   attachPinClick(pin);
   mapa.appendChild(pin);
@@ -331,17 +382,22 @@ mapa.addEventListener("drop", e => {
   savePins();
 });
 
-/* Zoom */
+/* ZOOM */
 function applyZoom() {
   mapa.style.transform = `scale(${zoom})`;
-
-  document.querySelectorAll(".pin").forEach(pin => {
-    pin.style.left = (pin.dataset.x * zoom) + "px";
-    pin.style.top = (pin.dataset.y * zoom) + "px";
-  });
 }
 
-mapContainer.addEventListener("wheel", e => {
+document.getElementById('zoomIn').onclick = () => {
+  zoom += 0.1;
+  applyZoom();
+};
+
+document.getElementById('zoomOut').onclick = () => {
+  zoom = Math.max(0.2, zoom - 0.1);
+  applyZoom();
+};
+
+mapContainer.addEventListener('wheel', e => {
   e.preventDefault();
   zoom += (e.deltaY < 0 ? 0.05 : -0.05);
   zoom = Math.max(0.2, Math.min(3, zoom));
