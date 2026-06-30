@@ -8,7 +8,7 @@
     font-family: Arial; 
     margin: 0; 
     padding: 0; 
-    overflow: hidden; /* ⭐ usuwa drugi pasek przewijania */
+    overflow: hidden;
   }
 
   #panel {
@@ -47,7 +47,7 @@
   #mapContainer {
     width: 100vw;
     height: 100vh;
-    overflow: scroll; /* ⭐ tylko jeden pasek */
+    overflow: scroll;
     position: relative;
   }
 
@@ -272,7 +272,7 @@ document.getElementById('search').addEventListener('input', function() {
   }
 });
 
-/* Tworzenie kafelka */
+/* Tworzenie kafelka z listy */
 document.getElementById('opcje').addEventListener('change', function() {
   const val = this.value;
   if (!val) return;
@@ -304,6 +304,20 @@ function savePins() {
   localStorage.setItem("pins", JSON.stringify(pins));
 }
 
+function attachPinClick(pin) {
+  pin.onclick = () => {
+    const ok = confirm("Czy na pewno chcesz usunąć ten znacznik?");
+    if (!ok) return;
+
+    const option = document.createElement('option');
+    option.textContent = pin.title;
+    dropdown.appendChild(option);
+
+    pin.remove();
+    savePins();
+  };
+}
+
 function loadPins() {
   const pins = JSON.parse(localStorage.getItem("pins") || "[]");
 
@@ -314,17 +328,9 @@ function loadPins() {
     pin.style.top = p.y;
     pin.title = p.title;
 
-    pin.onclick = () => {
-      const option = document.createElement('option');
-      option.textContent = pin.title;
-      dropdown.appendChild(option);
-      pin.remove();
-      savePins();
-    };
-
+    attachPinClick(pin);
     mapa.appendChild(pin);
 
-    /* ⭐ USUWANIE OPCJI Z LISTY, JEŚLI PIN ISTNIEJE */
     for (let i = 0; i < dropdown.options.length; i++) {
       if (dropdown.options[i].text === p.title) {
         dropdown.remove(i);
@@ -336,7 +342,7 @@ function loadPins() {
 
 loadPins();
 
-/* Dodawanie pinów — POPRAWKA ZOOMU */
+/* Dodawanie pinów przez przeciągnięcie kafelka */
 mapa.addEventListener('dragover', e => e.preventDefault());
 
 let zoom = 1;
@@ -355,14 +361,7 @@ mapa.addEventListener('drop', e => {
   pin.style.top = y + "px";
   pin.title = window.przeciagany.textContent;
 
-  pin.onclick = () => {
-    const option = document.createElement('option');
-    option.textContent = pin.title;
-    dropdown.appendChild(option);
-    pin.remove();
-    savePins();
-  };
-
+  attachPinClick(pin);
   mapa.appendChild(pin);
 
   window.przeciagany.remove();
@@ -387,6 +386,10 @@ mapContainer.addEventListener('mousedown', e => {
 });
 
 document.addEventListener('mouseup', () => {
+  isDragging = false;
+});
+
+mapContainer.addEventListener('mouseleave', () => {
   isDragging = false;
 });
 
