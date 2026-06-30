@@ -2,7 +2,6 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
-
 <style>
   body { 
     font-family: Arial; 
@@ -10,7 +9,6 @@
     padding: 0; 
     overflow: hidden;
   }
-
   #panel {
     width: 320px;
     padding: 10px;
@@ -56,7 +54,6 @@
     left: 0;
     top: 0;
     transform-origin: 0 0;
-    cursor: grab;
   }
 
   #mapa img {
@@ -304,17 +301,13 @@ function savePins() {
   localStorage.setItem("pins", JSON.stringify(pins));
 }
 
-/* KLIK DZIAŁAJĄCY — Z BLOKOWANIEM PROPAGACJI */
+/* FUNKCJA KLIKNIĘCIA — DZIAŁAJĄCA, Z POTWIERDZENIEM, BEZ DUPLIKATÓW */
 function attachPinClick(pin) {
-
-  pin.addEventListener("mousedown", e => e.stopPropagation());
-  pin.addEventListener("click", e => e.stopPropagation());
-
   pin.onclick = () => {
 
     if (!confirm("Czy na pewno chcesz usunąć ten znacznik?")) return;
 
-    /* USUNIĘCIE DUPLIKATÓW */
+    /* USUNIĘCIE DUPLIKATÓW Z LISTY */
     for (let i = 0; i < dropdown.options.length; i++) {
       if (dropdown.options[i].text === pin.title) {
         dropdown.remove(i);
@@ -345,7 +338,7 @@ function loadPins() {
     attachPinClick(pin);
     mapa.appendChild(pin);
 
-    /* USUNIĘCIE OPCJI Z LISTY */
+    /* USUWANIE OPCJI Z LISTY, JEŚLI PIN ISTNIEJE */
     for (let i = 0; i < dropdown.options.length; i++) {
       if (dropdown.options[i].text === p.title) {
         dropdown.remove(i);
@@ -383,37 +376,6 @@ mapa.addEventListener('drop', e => {
   window.przeciagany = null;
 
   savePins();
-});
-
-/* PRZESUWANIE MAPY — DZIAŁA, ALE NIE BLOKUJE KLIKNIĘĆ */
-const mapContainer = document.getElementById('mapContainer');
-let isDragging = false;
-let startScrollLeft, startScrollTop, startX, startY;
-
-mapContainer.addEventListener('mousedown', e => {
-  if (e.target.classList.contains('pin')) return;
-
-  isDragging = true;
-  startScrollLeft = mapContainer.scrollLeft;
-  startScrollTop = mapContainer.scrollTop;
-  startX = e.clientX;
-  startY = e.clientY;
-});
-
-document.addEventListener('mouseup', () => {
-  isDragging = false;
-});
-
-mapContainer.addEventListener('mouseleave', () => {
-  isDragging = false;
-});
-
-document.addEventListener('mousemove', e => {
-  if (!isDragging) return;
-  const dx = e.clientX - startX;
-  const dy = e.clientY - startY;
-  mapContainer.scrollLeft = startScrollLeft - dx;
-  mapContainer.scrollTop = startScrollTop - dy;
 });
 
 /* ZOOM */
