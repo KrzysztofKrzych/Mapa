@@ -301,36 +301,30 @@ function savePins() {
   localStorage.setItem("pins", JSON.stringify(pins));
 }
 
-/* FUNKCJA KLIKNIĘCIA — DZIAŁAJĄCA, Z POTWIERDZENIEM, BEZ DUPLIKATÓW */
+/* FUNKCJA KLIKNIĘCIA — POPRAWIONA */
 function attachPinClick(pin) {
-  pin.onclick = () => {
+  pin.addEventListener("click", () => {
 
     if (!confirm("Czy na pewno chcesz usunąć ten znacznik?")) return;
 
-    /* USUNIĘCIE DUPLIKATÓW Z LISTY */
-    for (let i = 0; i < dropdown.options.length; i++) {
-      if (dropdown.options[i].text === pin.title) {
-        dropdown.remove(i);
-        break;
-      }
-    }
+    pin.remove();
 
-    /* DODANIE OPCJI TYLKO RAZ */
-    const option = document.createElement('option');
+    const option = document.createElement("option");
+    option.value = pin.title;
     option.textContent = pin.title;
     dropdown.appendChild(option);
 
-    pin.remove();
     savePins();
-  };
+  });
 }
 
+/* Wczytywanie pinów */
 function loadPins() {
   const pins = JSON.parse(localStorage.getItem("pins") || "[]");
 
   pins.forEach(p => {
-    const pin = document.createElement('div');
-    pin.className = 'pin';
+    const pin = document.createElement("div");
+    pin.className = "pin";
     pin.style.left = p.x;
     pin.style.top = p.y;
     pin.title = p.title;
@@ -338,9 +332,8 @@ function loadPins() {
     attachPinClick(pin);
     mapa.appendChild(pin);
 
-    /* USUWANIE OPCJI Z LISTY, JEŚLI PIN ISTNIEJE */
     for (let i = 0; i < dropdown.options.length; i++) {
-      if (dropdown.options[i].text === p.title) {
+      if (dropdown.options[i].value === p.title) {
         dropdown.remove(i);
         break;
       }
