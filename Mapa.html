@@ -4,7 +4,12 @@
 <meta charset="UTF-8">
 
 <style>
-  body { font-family: Arial; margin: 0; padding: 0; }
+  body { 
+    font-family: Arial; 
+    margin: 0; 
+    padding: 0; 
+    overflow: hidden; /* usuwa drugi pasek przewijania */
+  }
 
   #panel {
     width: 320px;
@@ -42,7 +47,7 @@
   #mapContainer {
     width: 100vw;
     height: 100vh;
-    overflow: scroll;
+    overflow: scroll; /* tylko jeden pasek */
     position: relative;
   }
 
@@ -92,6 +97,7 @@
 <div id="panel">
   <input type="text" id="search" placeholder="Szukaj urządzenia...">
 
+  <select id="opcje">
   <select id="opcje">
     <option value="">-- wybierz urządzenie --</option>
 <option>B247/P189 – GWINCIARKA 1 GWINCIARKA CMARNRM-20.400</option>
@@ -319,7 +325,7 @@ function loadPins() {
 
     mapa.appendChild(pin);
 
-    /* ⭐ USUWANIE OPCJI Z LISTY, JEŚLI PIN ISTNIEJE */
+    /* USUWANIE OPCJI Z LISTY, JEŚLI PIN ISTNIEJE */
     for (let i = 0; i < dropdown.options.length; i++) {
       if (dropdown.options[i].text === p.title) {
         dropdown.remove(i);
@@ -331,7 +337,7 @@ function loadPins() {
 
 loadPins();
 
-/* Dodawanie pinów — POPRAWKA ZOOMU */
+/* Dodawanie pinów — poprawka zoomu */
 mapa.addEventListener('dragover', e => e.preventDefault());
 
 let zoom = 1;
@@ -366,7 +372,7 @@ mapa.addEventListener('drop', e => {
   savePins();
 });
 
-/* PRZESUWANIE MAPY */
+/* PRZESUWANIE MAPY — poprawka „przyklejania” */
 const mapContainer = document.getElementById('mapContainer');
 let isDragging = false;
 let startScrollLeft, startScrollTop, startX, startY;
@@ -382,6 +388,10 @@ mapContainer.addEventListener('mousedown', e => {
 });
 
 document.addEventListener('mouseup', () => {
+  isDragging = false;
+});
+
+mapContainer.addEventListener('mouseleave', () => {
   isDragging = false;
 });
 
