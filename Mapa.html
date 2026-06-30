@@ -3,24 +3,21 @@
 <head>
 <meta charset="UTF-8">
 <style>
-  body {
-    margin: 0;
-    font-family: Arial;
-  }
+  body { margin: 0; font-family: Arial; }
+
   #panel {
     position: absolute;
     left: 10px;
     top: 10px;
     z-index: 1000;
     background: #fafafa;
-    border: 1px solid #ccc;
     padding: 10px;
+    border: 1px solid #ccc;
     width: 320px;
   }
-  #opcje {
-    width: 100%;
-    padding: 8px;
-  }
+
+  #opcje { width: 100%; padding: 8px; }
+
   .kafelek {
     padding: 8px 10px;
     background: #dce6ff;
@@ -30,22 +27,27 @@
     cursor: grab;
     display: inline-block;
   }
+
   #mapContainer {
-    position: relative;
     width: 100vw;
     height: 100vh;
     overflow: scroll;
+    position: relative;
   }
+
   #mapa {
     position: absolute;
     left: 0;
     top: 0;
+    transform-origin: 0 0;
   }
+
   #mapa img {
     width: 2000px;
     height: auto;
     display: block;
   }
+
   .pin {
     width: 32px;
     height: 32px;
@@ -55,9 +57,11 @@
     position: absolute;
     transform: translate(-50%, -100%);
     cursor: pointer;
+    pointer-events: auto; /* KLUCZOWE */
   }
 </style>
 </head>
+
 <body>
 
 <div id="panel">
@@ -215,88 +219,79 @@
 
 <div id="mapContainer">
   <div id="mapa">
-    <!-- Podmień na swoją mapę -->
-    <img src="https://via.placeholder.com/2000x1200.png?text=MAPA" id="mapImage">
+    <img src="https://via.placeholder.com/2000x1200.png?text=MAPA">
   </div>
 </div>
 
 <script>
-const mapa = document.getElementById('mapa');
-const dropdown = document.getElementById('opcje');
-const wynik = document.getElementById('wynik');
+const mapa = document.getElementById("mapa");
+const dropdown = document.getElementById("opcje");
+const wynik = document.getElementById("wynik");
+let zoom = 1;
 
-/* Tworzenie kafelka po wybraniu z listy */
-dropdown.addEventListener('change', function () {
+/* Tworzenie kafelka */
+dropdown.addEventListener("change", function () {
   const val = this.value;
   if (!val) return;
 
-  const kafelek = document.createElement('div');
-  kafelek.className = 'kafelek';
+  const kafelek = document.createElement("div");
+  kafelek.className = "kafelek";
   kafelek.textContent = val;
   kafelek.draggable = true;
   wynik.appendChild(kafelek);
 
-  // usuń z listy
   this.remove(this.selectedIndex);
 
-  kafelek.addEventListener('dragstart', () => {
+  kafelek.addEventListener("dragstart", () => {
     window.przeciagany = kafelek;
   });
 });
 
-/* Funkcja zapisu pinów */
+/* Zapis pinów */
 function savePins() {
-  const pins = [...document.querySelectorAll('.pin')].map(pin => ({
-    x: pin.style.left,
-    y: pin.style.top,
+  const pins = [...document.querySelectorAll(".pin")].map(pin => ({
+    x: pin.dataset.x,
+    y: pin.dataset.y,
     title: pin.title
   }));
-  localStorage.setItem('pins', JSON.stringify(pins));
+  localStorage.setItem("pins", JSON.stringify(pins));
 }
 
-/* Kliknięcie w pin: usuń + przywróć do listy */
+/* Kliknięcie w pin */
 function attachPinClick(pin) {
-  pin.addEventListener('click', () => {
-    if (!confirm('Czy na pewno chcesz usunąć ten znacznik?')) return;
+  pin.addEventListener("mousedown", () => {   /* KLUCZOWE: mousedown zamiast click */
+    if (!confirm("Usunąć pin?")) return;
 
     const title = pin.title;
-
-    // usuń pin z mapy
     pin.remove();
 
-    // przywróć opcję do listy, jeśli jej nie ma
-    let exists = false;
-    for (let i = 0; i < dropdown.options.length; i++) {
-      if (dropdown.options[i].value === title) {
-        exists = true;
-        break;
-      }
-    }
-    if (!exists) {
-      const opt = document.createElement('option');
-      opt.value = title;
-      opt.textContent = title;
-      dropdown.appendChild(opt);
-    }
+    const opt = document.createElement("option");
+    opt.value = title;
+    opt.textContent = title;
+    dropdown.appendChild(opt);
 
     savePins();
   });
 }
 
-/* Wczytanie pinów z localStorage */
+/* Wczytywanie pinów */
 function loadPins() {
-  const pins = JSON.parse(localStorage.getItem('pins') || '[]');
+  const pins = JSON.parse(localStorage.getItem("pins") || "[]");
+
   pins.forEach(p => {
-    const pin = document.createElement('div');
-    pin.className = 'pin';
-    pin.style.left = p.x;
-    pin.style.top = p.y;
+    const pin = document.createElement("div");
+    pin.className = "pin";
     pin.title = p.title;
+
+    pin.dataset.x = p.x;
+    pin.dataset.y = p.y;
+
+    pin.style.left = (p.x * zoom) + "px";
+    pin.style.top = (p.y * zoom) + "px";
 
     attachPinClick(pin);
     mapa.appendChild(pin);
 
-    // usuń odpowiadającą opcję z listy
     for (let i = 0; i < dropdown.options.length; i++) {
       if (dropdown.options[i].value === p.title) {
         dropdown.remove(i);
@@ -307,30 +302,50 @@ function loadPins() {
 }
 loadPins();
 
-/* Dodawanie pinów przez drop na mapę */
-mapa.addEventListener('dragover', e => e.preventDefault());
+/* Dodawanie pinów */
+mapa.addEventListener("dragover", e => e.preventDefault());
 
-mapa.addEventListener('drop', e => {
+mapa.addEventListener("drop", e => {
   e.preventDefault();
 
   const rect = mapa.getBoundingClientRect();
-  const x = e.clientX - rect.left;
-  const y = e.clientY - rect.top;
+  const x = (e.clientX - rect.left) / zoom;
+  const y = (e.clientY - rect.top) / zoom;
 
-  const pin = document.createElement('div');
-  pin.className = 'pin';
-  pin.style.left = x + 'px';
-  pin.style.top = y + 'px';
+  const pin = document.createElement("div");
+  pin.className = "pin";
   pin.title = window.przeciagany.textContent;
+
+  pin.dataset.x = x;
+  pin.dataset.y = y;
+
+  pin.style.left = (x * zoom) + "px";
+  pin.style.top = (y * zoom) + "px";
 
   attachPinClick(pin);
   mapa.appendChild(pin);
 
-  // usuń kafelek
   window.przeciagany.remove();
   window.przeciagany = null;
 
   savePins();
+});
+
+/* Zoom */
+function applyZoom() {
+  mapa.style.transform = `scale(${zoom})`;
+
+  document.querySelectorAll(".pin").forEach(pin => {
+    pin.style.left = (pin.dataset.x * zoom) + "px";
+    pin.style.top = (pin.dataset.y * zoom) + "px";
+  });
+}
+
+mapContainer.addEventListener("wheel", e => {
+  e.preventDefault();
+  zoom += (e.deltaY < 0 ? 0.05 : -0.05);
+  zoom = Math.max(0.2, Math.min(3, zoom));
+  applyZoom();
 });
 </script>
 
