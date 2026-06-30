@@ -1,4 +1,411 @@
-<!DOCTYPE html>
+<!DOCTYPE html><!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+
+<style>
+  body { 
+    font-family: Arial; 
+    margin: 0; 
+    padding: 0; 
+    overflow: hidden;
+  }
+
+  #panel {
+    width: 320px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    background: #fafafa;
+    position: absolute;
+    left: 10px;
+    top: 10px;
+    z-index: 1000;
+  }
+
+  #search {
+    width: 100%;
+    padding: 6px;
+    margin-bottom: 10px;
+  }
+
+  #opcje {
+    width: 100%;
+    padding: 8px;
+  }
+
+  .kafelek {
+    padding: 8px 10px;
+    background: #dce6ff;
+    border: 1px solid #8aa2ff;
+    border-radius: 6px;
+    margin-top: 10px;
+    cursor: grab;
+    width: fit-content;
+    display: inline-block;
+  }
+
+  #mapContainer {
+    width: 100vw;
+    height: 100vh;
+    overflow: scroll;
+    position: relative;
+  }
+
+  #mapa {
+    position: absolute;
+    left: 0;
+    top: 0;
+    transform-origin: 0 0;
+  }
+
+  #mapa img {
+    width: 5000px;
+    height: auto;
+    display: block;
+  }
+
+  .pin {
+    width: 32px;
+    height: 32px;
+    background-image: url("https://cdn-icons-png.flaticon.com/512/684/684908.png");
+    background-size: contain;
+    background-repeat: no-repeat;
+    position: absolute;
+    transform: translate(-50%, -100%);
+    cursor: pointer;
+  }
+
+  #zoomPanel {
+    position: absolute;
+    right: 20px;
+    top: 20px;
+    z-index: 2000;
+  }
+
+  #zoomPanel button {
+    width: 40px;
+    height: 40px;
+    font-size: 22px;
+    margin: 3px;
+  }
+</style>
+</head>
+
+<body>
+
+<div id="panel">
+  <input type="text" id="search" placeholder="Szukaj urządzenia...">
+
+  <select id="opcje">
+    <option value="">-- wybierz urządzenie --</option>
+<option>B247/P189 – GWINCIARKA 1 GWINCIARKA CMARNRM-20.400</option>
+<option>B250/P192 – GWINCIARKA 2 GWINCIARKA PNEUM.CMA RNRM 20.400+STÓŁ PODZIAŁOWY</option>
+<option>B25/P31 – GWINCIARKA 3 GWIŃCIARKA GWD</option>
+<option>B366/P305 – INW W OBCYM ŚRODKU TRWAŁYM 2 (MONTAŻ TRUELASER 3030)</option>
+<option>B12/P15 – KABINA KP-P KABINA KP-P GDAŃSK</option>
+<option>B345/P287 – KABINA PROSZKOWA</option>
+<option>B241/P183 – KOMORA ŚRUTOWNICZA PNEUMATYCZNA</option>
+<option>B358/P300 – KOMPUTER 1 STACJA ROBOCZA HP Z4 G4 WKS</option>
+<option>B229/P173 – KOMPUTER 15 LAPTOP DELL INSPIRE</option>
+<option>B240/P182 – KOMPUTER 16 LAPTOP LENOVO Z70-80</option>
+<option>B359/P301 – KOMPUTER 2 STACJA ROBOCZA HP Z4 G4 WKS</option>
+<option>B252/P194 – KOMPUTER 20 STACJA ROB.LENOVO + MONITOR LG I</option>
+<option>B253/P195 – KOMPUTER 21 STACJA ROB.LENOVO + MONITOR LG II</option>
+<option>B360/P302 – KOMPUTER 3 STACJA ROBOCZA HP Z4 G4 WKS</option>
+<option>B251/P193 – KOMPUTER 5 KOMPUTER (STACJA ROBOCZA+MONITOR)</option>
+<option>1410 – KOMPUTER STACJA GRAFICZNA DLA DKT DO SOLIDWORKS</option>
+<option>1406 – KOMPUTER STACJA GRAFICZNA DO SOLIDWORKS</option>
+<option>1390 – KOMPUTER STACJA GRAFICZNA TUF X670E</option>
+<option>B216/P161 – KOSIARKA 2 KOSIARKA VIKING MT5</option>
+<option>B40/P46 – KOWARKO-KUŹNIARKA</option>
+<option>B372 – LASER SPAWAJĄCY FANUCI 3 PRO</option>
+<option>1380 – LINIA DO MALOWANIA PROSZKOWEGO</option>
+<option>B43/P50 – MASZYNA DO CIĘCIA RUR 1</option>
+<option>B141/P27 – MASZYNA DO CIĘCIA RUR 2 PEDRAZZOLI</option>
+<option>B254/P196 – MASZYNA DO METALIZACJI OSU HESSLER 300A</option>
+<option>B242/P184 – MATRYCE + STEMPLE</option>
+<option>B214/P159 – MŁOT UDAROWY BOSCH</option>
+<option>B368/P307 – MONITOR 1 AOC 24B2XD</option>
+<option>B369/P308 – MONITOR 2 AOC 24B2XD</option>
+<option>B11/P14 – MYJNIA ULTRADŹWIĘKOWA ULTRON</option>
+<option>B228/P173 – NOŻYCE GILOTYNOWE</option>
+<option>B344/P286 – OCZYSZCZARKA SCHLICK</option>
+<option>B377/P313 – ODWIJAK DO BLACHY</option>
+<option>B381/P318 – OKLEINIARKA Holzmann KAM535NEO</option>
+<option>B265/P207 – OSTRZAŁKA 1</option>
+<option>B263/P205 – OSTRZAŁKA 2</option>
+<option>B264/P206 – OSTRZAŁKA 3 NDS-60</option>
+<option>B262/P214 – OSTRZAŁKA 4 NDD</option>
+<option>B15/P18 – PIEC SKP-5-OL</option>
+<option>B89 – PIŁA TARCZOWA 1</option>
+<option>B70/P93 – PIŁA TARCZOWA 2 PETRACOLI</option>
+<option>B281/P223 – PILARKA FORMATOWA OMGA</option>
+<option>B170/P115 – PILARKA TARCZOWA</option>
+<option>P47 – PISTOLET DO MALOWANIA ELEKTROSTATYCZNEGO</option>
+<option>B347/P289 – PLAZMA POWERMAX/600</option>
+<option>B289/P231 – POJEMNIK SPRĘŻONEGO POWIETRZA</option>
+<option>B173/P118 – PÓŁAUTOMAT SPAWALNICZY 1</option>
+<option>B186/P130 – PÓŁAUTOMAT SPAWALNICZY 10 POWERTEC 300C</option>
+<option>B236/P180 – PÓŁAUTOMAT SPAWALNICZY 11 POWERTEC 305C</option>
+<option>B174/P119 – PÓŁAUTOMAT SPAWALNICZY 2</option>
+<option>B199/P144 – PÓŁAUTOMAT SPAWALNICZY 3 MIG 255C</option>
+<option>B207/P152 – PÓŁAUTOMAT SPAWALNICZY 4 255C</option>
+<option>B203/P148 – PÓŁAUTOMAT SPAWALNICZY 5 255C</option>
+<option>B32/P38 – PÓŁAUTOMAT SPAWALNICZY 6 ESAB</option>
+<option>B204/P149 – PÓŁAUTOMAT SPAWALNICZY 7 MIG 255C</option>
+<option>B169/P114 – PÓŁAUTOMAT SPAWALNICZY 8 POWERTEC</option>
+<option>B185/P129 – PÓŁAUTOMAT SPAWALNICZY 9 POWERTEC 250C</option>
+<option>B114 – POLERKA 1</option>
+<option>B115 – POLERKA 2</option>
+<option>B198/P143 – POZYCJONER + UCHWYT PLAZMOWO-PROSZKOWY</option>
+<option>B357/P299 – PRASA 1 MVD INAN iBEND D175-3100</option>
+<option>B146 – PRASA 10</option>
+<option>B3/P3 – PRASA 11 THEISEN</option>
+<option>B103 – PRASA 12</option>
+<option>B193/P138 – PRASA 13 POZIOMA</option>
+<option>B26/P32 – PRASA 2 K-2324D</option>
+<option>B158 – PRASA 3</option>
+<option>B96 – PRASA 4</option>
+<option>B97 – PRASA 5</option>
+<option>B98 – PRASA 6</option>
+<option>B99 – PRASA 7</option>
+<option>B100 – PRASA 8</option>
+<option>B101 – PRASA 9</option>
+<option>1401 – PRASA KOLMAG</option>
+<option>B196/P141 – PRZECINARKA TAŚMOWA ARG240 PLUS</option>
+<option>B168 – PRZESIEWACZ TROCIN</option>
+<option>B282/P224 – REBAK</option>
+<option>B374/P310 – ROBOT SPAWALNICZY 1 FANUC</option>
+<option>B352/P294 – ROBOT SPAWALNICZY 2 FANUC</option>
+<option>B68/P91 – ROBOT SPAWALNICZY 3 ABB</option>
+<option>B85/P112 – ROBOT SPAWALNICZY 4 ROMAT 310</option>
+<option>B77/P100 – ROBOT SPAWALNICZY 5</option>
+<option>B34/P40 – ROBOT SPAWALNICZY 6</option>
+<option>B179/P124 – SPAWARKA 1 CADDY</option>
+<option>B177/P122 – SPAWARKA 2 TRANSFORMATOROWA</option>
+<option>B36/P42 – SPAWARKA 3 WIG 200</option>
+<option>B230/P174 – SPAWARKA 4</option>
+<option>B244/P186 – SPAWARKA 5 KEMPACT PULSE 3000A</option>
+<option>B243/P185 – SPAWARKA 6 TIG CLINOX ECO</option>
+<option>B266/P208 – SPRĘŻARKA 1</option>
+<option>B267/P209 – SPRĘŻARKA 2</option>
+<option>B269/P211 – SPRĘŻARKA 3</option>
+<option>B268/P210 – SPRĘŻARKA 4 SCS 90</option>
+<option>B69/P92 – SPRĘŻARKA 5 ŁOPATKOWA</option>
+<option>1404 – STEBNÓWKA JACK A6F-EH NR3008</option>
+<option>1403 – STEBNÓWKA JACK A6F-EH NR3015</option>
+<option>1393 – STEBNÓWKA JACK NR F23114531209</option>
+<option>1394 – STEBNÓWKA JACK NR F23124501568</option>
+<option>B346/P288 – SUSZARKA KOMOROWA KONWEKCYJNA</option>
+<option>B270/P212 – SUSZARNIA 5</option>
+<option>B190/P134 – SZLIFIERKA 1</option>
+<option>B232/P176 – SZLIFIERKA 10 TAŚMOWA</option>
+<option>B111 – SZLIFIERKA DWUSTRONNA DO DREWNA</option>
+<option>B350/P292 – SZLIFIERKA LPC 300</option>
+<option>B112 – SZLIFIERKA PASOWA DO DREWNA</option>
+<option>B351/P293 – SZLIFIERKA SWINGGRINDER</option>
+<option>B246/P188 – SZLIFIERKA 2 AL 100U-02</option>
+<option>B222/P167 – SZLIFIERKA 3 LBR 1506VRA</option>
+<option>B107 – SZLIFIERKA 4 DWUTARCZOWA</option>
+<option>B119 – SZLIFIERKA 5 DWUTARCZOWA</option>
+<option>B148 – SZLIFIERKA 6 DWUTARCZOWA</option>
+<option>B151 – SZLIFIERKA 7 FINTEC</option>
+<option>B88 – SZLIFIERKA 8 STOŁOWA</option>
+<option>B122 – SZLIFIERKA 9 TARCZOWA</option>
+<option>1405 – ŚRUTOWNICA (PIASKARKA)</option>
+<option>B259/P201 – TOKARKA 1 TUM-35</option>
+<option>B260/P202 – TOKARKA 2 POREBA</option>
+<option>B87 – TOKARKA 3</option>
+<option>B258/P200 – TURBOGENERATOR</option>
+<option>B191/P135 – URZĄDZENIE DO CIĘCIA PLAZMĄ</option>
+<option>B23/P28 – URZĄDZENIE DO GRADOWANIA RUR</option>
+<option>B234/P178 – URZĄDZENIE DO NAPYLANIA FARB PROSZKOWYCH</option>
+<option>1383 – URZĄDZENIE DO ROZKROJU TKANIN GERBER</option>
+<option>B213/P158 – WENTYLATOR 2 WP-10-D-3 II</option>
+<option>B212/P157 – WENTYLATOR 1 WP-10-D-3</option>
+<option>B183/P128 – WIERTARKA 1 AUTOMATYCZNA</option>
+<option>B140 – WIERTARKA 10 STOŁOWA</option>
+<option>B161 – WIERTARKA 11 STOŁOWA</option>
+<option>B201/P146 – WIERTARKA 2 KOLUMNOWA</option>
+<option>B202/P147 – WIERTARKA 3 KOLUMNOWA</option>
+<option>B8/P10 – WIERTARKA 4 KOLUMNOWA</option>
+<option>B249/P191 – WIERTARKA 5 OPTIDRILL B40PTE</option>
+<option>B86 – WIERTARKA 6 STOŁOWA</option>
+<option>B93 – WIERTARKA 7 STOŁOWA</option>
+<option>B95 – WIERTARKA 8 STOŁOWA</option>
+<option>B120 – WIERTARKA 9 STOŁOWA</option>
+<option>1400 – WIERTARKA ROBINIO</option>
+<option>B356/P298 – WYCINARKA LASEROWA TRULASER TUBE 5000</option>
+<option>B356/P298 – WYCINARKA LASEROWA 1 WYCINARKA LASEROWA TRULASER TUBE 5000</option>
+<option>B365 – WYCINARKA LASEROWA 2 WYCINARKA LASEROWA TRUMPF TRULASER 3030 (L20) UŻYWANA</option>
+<option>B184/P136 – WYKROJNIK 1 WYKROJNIK DETALU</option>
+<option>B231/P175 – WYKROJNIK 2 WYKROJNIK DO WYPRASEK</option>
+<option>B235/P179 – ZACISKARKA ZACISKARKA (PRASKA MECHANICZNA)</option>
+<option>B348/P290 – ZESTAW DO METALIZACJI GAZOWEJ MSG‑88</option>
+<option>B144 – ZGRZEWARKA DO METALU</option>
+  </select>
+
+  <div id="wynik"></div>
+</div>
+
+<div id="zoomPanel">
+  <button id="zoomIn">+</button>
+  <button id="zoomOut">−</button>
+</div>
+
+<div id="mapContainer">
+  <div id="mapa">
+    <img src="Mapa.jpg" id="mapImage">
+  </div>
+</div>
+
+<script>
+/* Wyszukiwarka */
+document.getElementById('search').addEventListener('input', function() {
+  const filter = this.value.toLowerCase();
+  const dropdown = document.getElementById('opcje');
+
+  for (let i = 0; i < dropdown.options.length; i++) {
+    const txt = dropdown.options[i].text.toLowerCase();
+    dropdown.options[i].style.display = txt.includes(filter) ? '' : 'none';
+  }
+});
+
+/* Tworzenie kafelka */
+document.getElementById('opcje').addEventListener('change', function() {
+  const val = this.value;
+  if (!val) return;
+
+  const kafelek = document.createElement('div');
+  kafelek.className = 'kafelek';
+  kafelek.textContent = val;
+  kafelek.draggable = true;
+
+  document.getElementById('wynik').appendChild(kafelek);
+
+  this.remove(this.selectedIndex);
+
+  kafelek.addEventListener('dragstart', () => {
+    window.przeciagany = kafelek;
+  });
+});
+
+/* PINY + ZAPIS */
+const mapa = document.getElementById('mapa');
+const dropdown = document.getElementById('opcje');
+
+function savePins() {
+  const pins = [...document.querySelectorAll('.pin')].map(pin => ({
+    x: pin.style.left,
+    y: pin.style.top,
+    title: pin.title
+  }));
+  localStorage.setItem("pins", JSON.stringify(pins));
+}
+
+/* KLIK DZIAŁAJĄCY — Z POTWIERDZENIEM I BEZ DUPLIKATÓW */
+function attachPinClick(pin) {
+  pin.onclick = () => {
+
+    if (!confirm("Czy na pewno chcesz usunąć ten znacznik?")) return;
+
+    /* USUNIĘCIE DUPLIKATÓW */
+    for (let i = 0; i < dropdown.options.length; i++) {
+      if (dropdown.options[i].text === pin.title) {
+        dropdown.remove(i);
+        break;
+      }
+    }
+
+    /* DODANIE OPCJI TYLKO RAZ */
+    const option = document.createElement('option');
+    option.textContent = pin.title;
+    dropdown.appendChild(option);
+
+    pin.remove();
+    savePins();
+  };
+}
+
+function loadPins() {
+  const pins = JSON.parse(localStorage.getItem("pins") || "[]");
+
+  pins.forEach(p => {
+    const pin = document.createElement('div');
+    pin.className = 'pin';
+    pin.style.left = p.x;
+    pin.style.top = p.y;
+    pin.title = p.title;
+
+    attachPinClick(pin);
+    mapa.appendChild(pin);
+
+    /* USUNIĘCIE OPCJI Z LISTY */
+    for (let i = 0; i < dropdown.options.length; i++) {
+      if (dropdown.options[i].text === p.title) {
+        dropdown.remove(i);
+        break;
+      }
+    }
+  });
+}
+
+loadPins();
+
+/* Dodawanie pinów */
+mapa.addEventListener('dragover', e => e.preventDefault());
+
+let zoom = 1;
+
+mapa.addEventListener('drop', e => {
+  e.preventDefault();
+
+  const rect = mapa.getBoundingClientRect();
+
+  const x = (e.clientX - rect.left) / zoom;
+  const y = (e.clientY - rect.top) / zoom;
+
+  const pin = document.createElement('div');
+  pin.className = 'pin';
+  pin.style.left = x + "px";
+  pin.style.top = y + "px";
+  pin.title = window.przeciagany.textContent;
+
+  attachPinClick(pin);
+  mapa.appendChild(pin);
+
+  window.przeciagany.remove();
+  window.przeciagany = null;
+
+  savePins();
+});
+
+/* ZOOM */
+function applyZoom() {
+  mapa.style.transform = `scale(${zoom})`;
+}
+
+document.getElementById('zoomIn').onclick = () => {
+  zoom += 0.1;
+  applyZoom();
+};
+
+document.getElementById('zoomOut').onclick = () => {
+  zoom = Math.max(0.2, zoom - 0.1);
+  applyZoom();
+};
+
+mapContainer.addEventListener('wheel', e => {
+  e.preventDefault();
+  zoom += (e.deltaY < 0 ? 0.05 : -0.05);
+  zoom = Math.max(0.2, Math.min(3, zoom));
+  applyZoom();
+});
+</script>
+
+</body>
+</html>
+
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
