@@ -291,6 +291,7 @@ document.getElementById('opcje').addEventListener('change', function() {
 /* PINY + ZAPIS */
 const mapa = document.getElementById('mapa');
 const dropdown = document.getElementById('opcje');
+const mapContainer = document.getElementById('mapContainer');
 
 function savePins() {
   const pins = [...document.querySelectorAll('.pin')].map(pin => ({
@@ -301,18 +302,28 @@ function savePins() {
   localStorage.setItem("pins", JSON.stringify(pins));
 }
 
-/* FUNKCJA KLIKNIĘCIA — POPRAWIONA */
+/* FUNKCJA KLIKNIĘCIA — USUWANIE PINA I PRZYWRÓCENIE OPCJI */
 function attachPinClick(pin) {
   pin.addEventListener("click", () => {
-
     if (!confirm("Czy na pewno chcesz usunąć ten znacznik?")) return;
 
+    // Usuń pin z mapy
     pin.remove();
 
-    const option = document.createElement("option");
-    option.value = pin.title;
-    option.textContent = pin.title;
-    dropdown.appendChild(option);
+    // Dodaj opcję z powrotem do listy (jeśli jeszcze jej nie ma)
+    let exists = false;
+    for (let i = 0; i < dropdown.options.length; i++) {
+      if (dropdown.options[i].value === pin.title) {
+        exists = true;
+        break;
+      }
+    }
+    if (!exists) {
+      const option = document.createElement("option");
+      option.value = pin.title;
+      option.textContent = pin.title;
+      dropdown.appendChild(option);
+    }
 
     savePins();
   });
@@ -332,6 +343,7 @@ function loadPins() {
     attachPinClick(pin);
     mapa.appendChild(pin);
 
+    // Usuń opcję z listy, jeśli odpowiada temu pinowi
     for (let i = 0; i < dropdown.options.length; i++) {
       if (dropdown.options[i].value === p.title) {
         dropdown.remove(i);
