@@ -56,7 +56,6 @@
     left: 0;
     top: 0;
     transform-origin: 0 0;
-    cursor: grab;
   }
 
   #mapa img {
@@ -272,7 +271,7 @@ document.getElementById('search').addEventListener('input', function() {
   }
 });
 
-/* Tworzenie kafelka z listy */
+/* Tworzenie kafelka */
 document.getElementById('opcje').addEventListener('change', function() {
   const val = this.value;
   if (!val) return;
@@ -304,16 +303,24 @@ function savePins() {
   localStorage.setItem("pins", JSON.stringify(pins));
 }
 
+/* JEDYNA WAŻNA FUNKCJA — DZIAŁAJĄCA */
 function attachPinClick(pin) {
   pin.onclick = () => {
-    const ok = confirm("Czy na pewno chcesz usunąć ten znacznik?");
-    if (!ok) return;
 
+    /* jedyna dodana rzecz */
+    if (!confirm("Czy na pewno chcesz usunąć ten znacznik?")) {
+      return;
+    }
+
+    /* przywrócenie urządzenia do listy */
     const option = document.createElement('option');
     option.textContent = pin.title;
     dropdown.appendChild(option);
 
+    /* usunięcie pina */
     pin.remove();
+
+    /* zapis */
     savePins();
   };
 }
@@ -331,6 +338,7 @@ function loadPins() {
     attachPinClick(pin);
     mapa.appendChild(pin);
 
+    /* usunięcie z listy */
     for (let i = 0; i < dropdown.options.length; i++) {
       if (dropdown.options[i].text === p.title) {
         dropdown.remove(i);
@@ -342,7 +350,7 @@ function loadPins() {
 
 loadPins();
 
-/* Dodawanie pinów przez przeciągnięcie kafelka */
+/* Dodawanie pinów */
 mapa.addEventListener('dragover', e => e.preventDefault());
 
 let zoom = 1;
@@ -368,37 +376,6 @@ mapa.addEventListener('drop', e => {
   window.przeciagany = null;
 
   savePins();
-});
-
-/* PRZESUWANIE MAPY */
-const mapContainer = document.getElementById('mapContainer');
-let isDragging = false;
-let startScrollLeft, startScrollTop, startX, startY;
-
-mapContainer.addEventListener('mousedown', e => {
-  if (e.target.classList.contains('pin')) return;
-
-  isDragging = true;
-  startScrollLeft = mapContainer.scrollLeft;
-  startScrollTop = mapContainer.scrollTop;
-  startX = e.clientX;
-  startY = e.clientY;
-});
-
-document.addEventListener('mouseup', () => {
-  isDragging = false;
-});
-
-mapContainer.addEventListener('mouseleave', () => {
-  isDragging = false;
-});
-
-document.addEventListener('mousemove', e => {
-  if (!isDragging) return;
-  const dx = e.clientX - startX;
-  const dy = e.clientY - startY;
-  mapContainer.scrollLeft = startScrollLeft - dx;
-  mapContainer.scrollTop = startScrollTop - dy;
 });
 
 /* ZOOM */
