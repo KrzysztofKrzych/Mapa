@@ -2,6 +2,7 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
+
 <style>
   body { 
     font-family: Arial; 
@@ -9,6 +10,7 @@
     padding: 0; 
     overflow: hidden;
   }
+
   #panel {
     width: 320px;
     padding: 10px;
@@ -301,13 +303,13 @@ function savePins() {
   localStorage.setItem("pins", JSON.stringify(pins));
 }
 
-/* FUNKCJA KLIKNIĘCIA — DZIAŁAJĄCA, Z POTWIERDZENIEM, BEZ DUPLIKATÓW */
+/* KLIK DZIAŁAJĄCY — Z POTWIERDZENIEM I BEZ DUPLIKATÓW */
 function attachPinClick(pin) {
   pin.onclick = () => {
 
     if (!confirm("Czy na pewno chcesz usunąć ten znacznik?")) return;
 
-    /* USUNIĘCIE DUPLIKATÓW Z LISTY */
+    /* USUNIĘCIE DUPLIKATÓW */
     for (let i = 0; i < dropdown.options.length; i++) {
       if (dropdown.options[i].text === pin.title) {
         dropdown.remove(i);
@@ -338,7 +340,7 @@ function loadPins() {
     attachPinClick(pin);
     mapa.appendChild(pin);
 
-    /* USUWANIE OPCJI Z LISTY, JEŚLI PIN ISTNIEJE */
+    /* USUNIĘCIE OPCJI Z LISTY */
     for (let i = 0; i < dropdown.options.length; i++) {
       if (dropdown.options[i].text === p.title) {
         dropdown.remove(i);
