@@ -8,7 +8,7 @@
     font-family: Arial; 
     margin: 0; 
     padding: 0; 
-    overflow: hidden;
+    overflow: hidden; /* ⭐ usuwa drugi pasek przewijania */
   }
 
   #panel {
@@ -47,7 +47,7 @@
   #mapContainer {
     width: 100vw;
     height: 100vh;
-    overflow: scroll;
+    overflow: scroll; /* ⭐ tylko jeden pasek */
     position: relative;
   }
 
@@ -98,7 +98,7 @@
   <input type="text" id="search" placeholder="Szukaj urządzenia...">
 
   <select id="opcje">
-      <option value="">-- wybierz urządzenie --</option>
+    <option value="">-- wybierz urządzenie --</option>
 <option>B247/P189 – GWINCIARKA 1 GWINCIARKA CMARNRM-20.400</option>
 <option>B250/P192 – GWINCIARKA 2 GWINCIARKA PNEUM.CMA RNRM 20.400+STÓŁ PODZIAŁOWY</option>
 <option>B25/P31 – GWINCIARKA 3 GWIŃCIARKA GWD</option>
@@ -243,8 +243,7 @@
 <option>B231/P175 – WYKROJNIK 2 WYKROJNIK DO WYPRASEK</option>
 <option>B235/P179 – ZACISKARKA ZACISKARKA (PRASKA MECHANICZNA)</option>
 <option>B348/P290 – ZESTAW DO METALIZACJI GAZOWEJ MSG‑88</option>
-<option>B144 – ZGRZEWARKA DO METALU</option> 
-
+<option>B144 – ZGRZEWARKA DO METALU</option>
   </select>
 
   <div id="wynik"></div>
@@ -305,26 +304,6 @@ function savePins() {
   localStorage.setItem("pins", JSON.stringify(pins));
 }
 
-function attachPinEvents(pin) {
-
-  /* blokowanie przechwytywania kliknięcia przez mapę */
-  pin.addEventListener("mousedown", e => e.stopPropagation());
-
-  pin.addEventListener("click", e => {
-    e.stopPropagation();
-
-    const ok = confirm("Czy na pewno chcesz usunąć ten znacznik?");
-    if (!ok) return;
-
-    const option = document.createElement("option");
-    option.textContent = pin.title;
-    dropdown.appendChild(option);
-
-    pin.remove();
-    savePins();
-  });
-}
-
 function loadPins() {
   const pins = JSON.parse(localStorage.getItem("pins") || "[]");
 
@@ -335,9 +314,17 @@ function loadPins() {
     pin.style.top = p.y;
     pin.title = p.title;
 
-    attachPinEvents(pin);
+    pin.onclick = () => {
+      const option = document.createElement('option');
+      option.textContent = pin.title;
+      dropdown.appendChild(option);
+      pin.remove();
+      savePins();
+    };
+
     mapa.appendChild(pin);
 
+    /* ⭐ USUWANIE OPCJI Z LISTY, JEŚLI PIN ISTNIEJE */
     for (let i = 0; i < dropdown.options.length; i++) {
       if (dropdown.options[i].text === p.title) {
         dropdown.remove(i);
@@ -349,7 +336,7 @@ function loadPins() {
 
 loadPins();
 
-/* Dodawanie pinów */
+/* Dodawanie pinów — POPRAWKA ZOOMU */
 mapa.addEventListener('dragover', e => e.preventDefault());
 
 let zoom = 1;
@@ -368,7 +355,14 @@ mapa.addEventListener('drop', e => {
   pin.style.top = y + "px";
   pin.title = window.przeciagany.textContent;
 
-  attachPinEvents(pin);
+  pin.onclick = () => {
+    const option = document.createElement('option');
+    option.textContent = pin.title;
+    dropdown.appendChild(option);
+    pin.remove();
+    savePins();
+  };
+
   mapa.appendChild(pin);
 
   window.przeciagany.remove();
@@ -393,10 +387,6 @@ mapContainer.addEventListener('mousedown', e => {
 });
 
 document.addEventListener('mouseup', () => {
-  isDragging = false;
-});
-
-mapContainer.addEventListener('mouseleave', () => {
   isDragging = false;
 });
 
