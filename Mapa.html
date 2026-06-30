@@ -3,34 +3,24 @@
 <head>
 <meta charset="UTF-8">
 <style>
-  body { 
-    font-family: Arial; 
-    margin: 0; 
-    padding: 0; 
-    overflow: hidden;
+  body {
+    margin: 0;
+    font-family: Arial;
   }
   #panel {
-    width: 320px;
-    padding: 10px;
-    border: 1px solid #ccc;
-    background: #fafafa;
     position: absolute;
     left: 10px;
     top: 10px;
     z-index: 1000;
+    background: #fafafa;
+    border: 1px solid #ccc;
+    padding: 10px;
+    width: 320px;
   }
-
-  #search {
-    width: 100%;
-    padding: 6px;
-    margin-bottom: 10px;
-  }
-
   #opcje {
     width: 100%;
     padding: 8px;
   }
-
   .kafelek {
     padding: 8px 10px;
     background: #dce6ff;
@@ -38,30 +28,24 @@
     border-radius: 6px;
     margin-top: 10px;
     cursor: grab;
-    width: fit-content;
     display: inline-block;
   }
-
   #mapContainer {
+    position: relative;
     width: 100vw;
     height: 100vh;
     overflow: scroll;
-    position: relative;
   }
-
   #mapa {
     position: absolute;
     left: 0;
     top: 0;
-    transform-origin: 0 0;
   }
-
   #mapa img {
-    width: 5000px;
+    width: 2000px;
     height: auto;
     display: block;
   }
-
   .pin {
     width: 32px;
     height: 32px;
@@ -72,28 +56,11 @@
     transform: translate(-50%, -100%);
     cursor: pointer;
   }
-
-  #zoomPanel {
-    position: absolute;
-    right: 20px;
-    top: 20px;
-    z-index: 2000;
-  }
-
-  #zoomPanel button {
-    width: 40px;
-    height: 40px;
-    font-size: 22px;
-    margin: 3px;
-  }
 </style>
 </head>
-
 <body>
 
 <div id="panel">
-  <input type="text" id="search" placeholder="Szukaj urządzenia...">
-
   <select id="opcje">
     <option value="">-- wybierz urządzenie --</option>
 <option>B247/P189 – GWINCIARKA 1 GWINCIARKA CMARNRM-20.400</option>
@@ -246,31 +213,20 @@
   <div id="wynik"></div>
 </div>
 
-<div id="zoomPanel">
-  <button id="zoomIn">+</button>
-  <button id="zoomOut">−</button>
-</div>
-
 <div id="mapContainer">
   <div id="mapa">
-    <img src="Mapa.jpg" id="mapImage">
+    <!-- Podmień na swoją mapę -->
+    <img src="https://via.placeholder.com/2000x1200.png?text=MAPA" id="mapImage">
   </div>
 </div>
 
 <script>
-/* Wyszukiwarka */
-document.getElementById('search').addEventListener('input', function() {
-  const filter = this.value.toLowerCase();
-  const dropdown = document.getElementById('opcje');
+const mapa = document.getElementById('mapa');
+const dropdown = document.getElementById('opcje');
+const wynik = document.getElementById('wynik');
 
-  for (let i = 0; i < dropdown.options.length; i++) {
-    const txt = dropdown.options[i].text.toLowerCase();
-    dropdown.options[i].style.display = txt.includes(filter) ? '' : 'none';
-  }
-});
-
-/* Tworzenie kafelka */
-document.getElementById('opcje').addEventListener('change', function() {
+/* Tworzenie kafelka po wybraniu z listy */
+dropdown.addEventListener('change', function () {
   const val = this.value;
   if (!val) return;
 
@@ -278,9 +234,9 @@ document.getElementById('opcje').addEventListener('change', function() {
   kafelek.className = 'kafelek';
   kafelek.textContent = val;
   kafelek.draggable = true;
+  wynik.appendChild(kafelek);
 
-  document.getElementById('wynik').appendChild(kafelek);
-
+  // usuń z listy
   this.remove(this.selectedIndex);
 
   kafelek.addEventListener('dragstart', () => {
@@ -288,54 +244,51 @@ document.getElementById('opcje').addEventListener('change', function() {
   });
 });
 
-/* PINY + ZAPIS */
-const mapa = document.getElementById('mapa');
-const dropdown = document.getElementById('opcje');
-const mapContainer = document.getElementById('mapContainer');
-
+/* Funkcja zapisu pinów */
 function savePins() {
   const pins = [...document.querySelectorAll('.pin')].map(pin => ({
     x: pin.style.left,
     y: pin.style.top,
     title: pin.title
   }));
-  localStorage.setItem("pins", JSON.stringify(pins));
+  localStorage.setItem('pins', JSON.stringify(pins));
 }
 
-/* FUNKCJA KLIKNIĘCIA — USUWANIE PINA I PRZYWRÓCENIE OPCJI */
+/* Kliknięcie w pin: usuń + przywróć do listy */
 function attachPinClick(pin) {
-  pin.addEventListener("click", () => {
-    if (!confirm("Czy na pewno chcesz usunąć ten znacznik?")) return;
+  pin.addEventListener('click', () => {
+    if (!confirm('Czy na pewno chcesz usunąć ten znacznik?')) return;
 
-    // Usuń pin z mapy
+    const title = pin.title;
+
+    // usuń pin z mapy
     pin.remove();
 
-    // Dodaj opcję z powrotem do listy (jeśli jeszcze jej nie ma)
+    // przywróć opcję do listy, jeśli jej nie ma
     let exists = false;
     for (let i = 0; i < dropdown.options.length; i++) {
-      if (dropdown.options[i].value === pin.title) {
+      if (dropdown.options[i].value === title) {
         exists = true;
         break;
       }
     }
     if (!exists) {
-      const option = document.createElement("option");
-      option.value = pin.title;
-      option.textContent = pin.title;
-      dropdown.appendChild(option);
+      const opt = document.createElement('option');
+      opt.value = title;
+      opt.textContent = title;
+      dropdown.appendChild(opt);
     }
 
     savePins();
   });
 }
 
-/* Wczytywanie pinów */
+/* Wczytanie pinów z localStorage */
 function loadPins() {
-  const pins = JSON.parse(localStorage.getItem("pins") || "[]");
-
+  const pins = JSON.parse(localStorage.getItem('pins') || '[]');
   pins.forEach(p => {
-    const pin = document.createElement("div");
-    pin.className = "pin";
+    const pin = document.createElement('div');
+    pin.className = 'pin';
     pin.style.left = p.x;
     pin.style.top = p.y;
     pin.title = p.title;
@@ -343,7 +296,7 @@ function loadPins() {
     attachPinClick(pin);
     mapa.appendChild(pin);
 
-    // Usuń opcję z listy, jeśli odpowiada temu pinowi
+    // usuń odpowiadającą opcję z listy
     for (let i = 0; i < dropdown.options.length; i++) {
       if (dropdown.options[i].value === p.title) {
         dropdown.remove(i);
@@ -352,57 +305,32 @@ function loadPins() {
     }
   });
 }
-
 loadPins();
 
-/* Dodawanie pinów */
+/* Dodawanie pinów przez drop na mapę */
 mapa.addEventListener('dragover', e => e.preventDefault());
-
-let zoom = 1;
 
 mapa.addEventListener('drop', e => {
   e.preventDefault();
 
   const rect = mapa.getBoundingClientRect();
-
-  const x = (e.clientX - rect.left) / zoom;
-  const y = (e.clientY - rect.top) / zoom;
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
 
   const pin = document.createElement('div');
   pin.className = 'pin';
-  pin.style.left = x + "px";
-  pin.style.top = y + "px";
+  pin.style.left = x + 'px';
+  pin.style.top = y + 'px';
   pin.title = window.przeciagany.textContent;
 
   attachPinClick(pin);
   mapa.appendChild(pin);
 
+  // usuń kafelek
   window.przeciagany.remove();
   window.przeciagany = null;
 
   savePins();
-});
-
-/* ZOOM */
-function applyZoom() {
-  mapa.style.transform = `scale(${zoom})`;
-}
-
-document.getElementById('zoomIn').onclick = () => {
-  zoom += 0.1;
-  applyZoom();
-};
-
-document.getElementById('zoomOut').onclick = () => {
-  zoom = Math.max(0.2, zoom - 0.1);
-  applyZoom();
-};
-
-mapContainer.addEventListener('wheel', e => {
-  e.preventDefault();
-  zoom += (e.deltaY < 0 ? 0.05 : -0.05);
-  zoom = Math.max(0.2, Math.min(3, zoom));
-  applyZoom();
 });
 </script>
 
