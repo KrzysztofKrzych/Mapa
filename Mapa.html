@@ -431,6 +431,34 @@ document.addEventListener('mousemove', e => {
 mapa.addEventListener('dragstart', e => e.preventDefault());
 
 /* ZOOM */
+const mapImage = document.getElementById('mapImage');
+let minZoom = 0.2; // wartość tymczasowa, zostanie przeliczona po załadowaniu obrazka
+
+function updateMinZoom() {
+  if (!mapImage.naturalWidth || !mapImage.naturalHeight) return;
+
+  const imgDisplayWidth = 5000; // zgodnie z CSS: #mapa img { width: 5000px; }
+  const imgDisplayHeight = imgDisplayWidth * (mapImage.naturalHeight / mapImage.naturalWidth);
+
+  const containerW = mapContainer.clientWidth;
+  const containerH = mapContainer.clientHeight;
+
+  minZoom = Math.max(containerW / imgDisplayWidth, containerH / imgDisplayHeight);
+
+  // jeśli aktualny zoom jest teraz mniejszy niż nowe minimum, dociągnij go w górę
+  if (zoom < minZoom) {
+    zoom = minZoom;
+    applyZoom();
+  }
+}
+
+if (mapImage.complete) {
+  updateMinZoom();
+} else {
+  mapImage.addEventListener('load', updateMinZoom);
+}
+window.addEventListener('resize', updateMinZoom);
+
 function applyZoom() {
   mapa.style.transform = `scale(${zoom})`;
   const pinScale = Math.max(1, MIN_PIN_SIZE / (PIN_SIZE * zoom));
@@ -443,14 +471,14 @@ document.getElementById('zoomIn').onclick = () => {
 };
 
 document.getElementById('zoomOut').onclick = () => {
-  zoom = Math.max(0.2, zoom - 0.1);
+  zoom = Math.max(minZoom, zoom - 0.1);
   applyZoom();
 };
 
 mapContainer.addEventListener('wheel', e => {
   e.preventDefault();
   zoom += (e.deltaY < 0 ? 0.05 : -0.05);
-  zoom = Math.max(0.2, Math.min(3, zoom));
+  zoom = Math.max(minZoom, Math.min(3, zoom));
   applyZoom();
 });
 </script>
