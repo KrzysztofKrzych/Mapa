@@ -63,6 +63,16 @@
     width: 5000px;
     height: auto;
     display: block;
+    -webkit-user-drag: none;   /* blokuje natywne przeciąganie obrazka */
+    user-drag: none;
+    user-select: none;
+    -webkit-user-select: none;
+    pointer-events: none;      /* klikanie/przeciąganie mapy obsługuje #mapa, nie sam <img> */
+  }
+
+  #mapContainer.dragging,
+  #mapContainer.dragging * {
+    user-select: none;         /* nie zaznaczaj tekstu w trakcie przesuwania */
   }
 
   .pin {
@@ -255,7 +265,7 @@
 
 <div id="mapContainer">
   <div id="mapa">
-    <img src="Mapa.jpg" id="mapImage">
+    <img src="Mapa.jpg" id="mapImage" draggable="false">
   </div>
 </div>
 
@@ -378,19 +388,27 @@ let startScrollLeft, startScrollTop, startX, startY;
 mapContainer.addEventListener('mousedown', e => {
   if (e.target.classList.contains('pin')) return;
 
+  e.preventDefault(); // blokuje np. zaznaczanie tekstu / natywny drag, który powodował "przyklejanie"
+
   isDragging = true;
   startScrollLeft = mapContainer.scrollLeft;
   startScrollTop = mapContainer.scrollTop;
   startX = e.clientX;
   startY = e.clientY;
+  mapContainer.classList.add('dragging');
+  mapContainer.style.cursor = 'grabbing';
 });
 
 document.addEventListener('mouseup', () => {
   isDragging = false;
+  mapContainer.classList.remove('dragging');
+  mapContainer.style.cursor = 'grab';
 });
 
 mapContainer.addEventListener('mouseleave', () => {
   isDragging = false;
+  mapContainer.classList.remove('dragging');
+  mapContainer.style.cursor = 'grab';
 });
 
 document.addEventListener('mousemove', e => {
@@ -400,6 +418,9 @@ document.addEventListener('mousemove', e => {
   mapContainer.scrollLeft = startScrollLeft - dx;
   mapContainer.scrollTop = startScrollTop - dy;
 });
+
+/* dodatkowa blokada: żaden element mapy nie powinien wywoływać natywnego drag&drop */
+mapa.addEventListener('dragstart', e => e.preventDefault());
 
 /* ZOOM */
 function applyZoom() {
