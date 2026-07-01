@@ -60,8 +60,6 @@
     width: 5000px;
     height: auto;
     display: block;
-    position: relative;
-    z-index: 1;
   }
 
   .pin {
@@ -73,7 +71,6 @@
     position: absolute;
     transform: translate(-50%, -100%);
     cursor: pointer;
-    z-index: 2;
   }
 
   #zoomPanel {
@@ -294,7 +291,6 @@ document.getElementById('opcje').addEventListener('change', function() {
 /* PINY + ZAPIS */
 const mapa = document.getElementById('mapa');
 const dropdown = document.getElementById('opcje');
-const mapContainer = document.getElementById('mapContainer');
 
 function savePins() {
   const pins = [...document.querySelectorAll('.pin')].map(pin => ({
