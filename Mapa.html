@@ -78,13 +78,20 @@
   }
 
   .pin {
+    position: absolute;
+  }
+
+  .pin-icon {
+    position: absolute;
+    left: 0;
+    top: 0;
     width: 32px;
     height: 32px;
     background-image: url("https://cdn-icons-png.flaticon.com/512/684/684908.png");
     background-size: contain;
     background-repeat: no-repeat;
-    position: absolute;
-    transform: translate(-50%, -100%);
+    transform-origin: 50% 100%; /* pivot na czubku pinezki */
+    transform: translate(-50%, -100%) scale(var(--pin-scale, 1));
     cursor: pointer;
   }
 
@@ -315,24 +322,36 @@ function savePins() {
   localStorage.setItem("pins", JSON.stringify(pins));
 }
 
+const PIN_SIZE = 32;      // naturalny rozmiar pinezki (px)
+const MIN_PIN_SIZE = 18;  // minimalny widoczny rozmiar pinezki przy oddaleniu (px)
+
+function createPin(x, y, title) {
+  const pin = document.createElement('div');
+  pin.className = 'pin';
+  pin.style.left = x;
+  pin.style.top = y;
+  pin.title = title;
+
+  const icon = document.createElement('div');
+  icon.className = 'pin-icon';
+  pin.appendChild(icon);
+
+  pin.onclick = () => {
+    const option = document.createElement('option');
+    option.textContent = pin.title;
+    dropdown.appendChild(option);
+    pin.remove();
+    savePins();
+  };
+
+  return pin;
+}
+
 function loadPins() {
   const pins = JSON.parse(localStorage.getItem("pins") || "[]");
 
   pins.forEach(p => {
-    const pin = document.createElement('div');
-    pin.className = 'pin';
-    pin.style.left = p.x;
-    pin.style.top = p.y;
-    pin.title = p.title;
-
-    pin.onclick = () => {
-      const option = document.createElement('option');
-      option.textContent = pin.title;
-      dropdown.appendChild(option);
-      pin.remove();
-      savePins();
-    };
-
+    const pin = createPin(p.x, p.y, p.title);
     mapa.appendChild(pin);
 
     /* USUWANIE OPCJI Z LISTY, JEŚLI PIN ISTNIEJE */
@@ -360,20 +379,7 @@ mapa.addEventListener('drop', e => {
   const x = (e.clientX - rect.left) / zoom;
   const y = (e.clientY - rect.top) / zoom;
 
-  const pin = document.createElement('div');
-  pin.className = 'pin';
-  pin.style.left = x + "px";
-  pin.style.top = y + "px";
-  pin.title = window.przeciagany.textContent;
-
-  pin.onclick = () => {
-    const option = document.createElement('option');
-    option.textContent = pin.title;
-    dropdown.appendChild(option);
-    pin.remove();
-    savePins();
-  };
-
+  const pin = createPin(x + "px", y + "px", window.przeciagany.textContent);
   mapa.appendChild(pin);
 
   window.przeciagany.remove();
@@ -388,7 +394,7 @@ let isDragging = false;
 let startScrollLeft, startScrollTop, startX, startY;
 
 mapContainer.addEventListener('mousedown', e => {
-  if (e.target.classList.contains('pin')) return;
+  if (e.target.closest('.pin')) return;
 
   e.preventDefault(); // blokuje np. zaznaczanie tekstu / natywny drag, który powodował "przyklejanie"
 
@@ -427,6 +433,8 @@ mapa.addEventListener('dragstart', e => e.preventDefault());
 /* ZOOM */
 function applyZoom() {
   mapa.style.transform = `scale(${zoom})`;
+  const pinScale = Math.max(1, MIN_PIN_SIZE / (PIN_SIZE * zoom));
+  document.documentElement.style.setProperty('--pin-scale', pinScale);
 }
 
 document.getElementById('zoomIn').onclick = () => {
