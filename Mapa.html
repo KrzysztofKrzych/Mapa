@@ -5,19 +5,18 @@
 
 <style>
   body { 
+    font-family: Arial; 
     margin: 0; 
     padding: 0; 
-    font-family: Arial;
-    overflow: hidden;
+    overflow: hidden; /* usuwa drugi pasek przewijania */
   }
 
-  /* PANEL */
   #panel {
     width: 320px;
     padding: 10px;
     border: 1px solid #ccc;
     background: #fafafa;
-    position: fixed;
+    position: absolute;
     left: 10px;
     top: 10px;
     z-index: 1000;
@@ -45,22 +44,19 @@
     display: inline-block;
   }
 
-  /* SUWAKI */
   #mapContainer {
-    position: absolute;
-    left: 350px;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    overflow: scroll;   /* ⭐ SUWAKI */
-    background: #ddd;
+    width: 100vw;
+    height: 100vh;
+    overflow: scroll; /* tylko jeden pasek */
+    position: relative;
   }
 
-  /* MAPA */
   #mapa {
-    position: relative;
-    width: 5000px;
-    height: auto;
+    position: absolute;
+    left: 0;
+    top: 0;
+    transform-origin: 0 0;
+    cursor: grab;
   }
 
   #mapa img {
@@ -69,26 +65,37 @@
     display: block;
   }
 
-  /* PINY */
   .pin {
-    width: 24px;
-    height: 24px;
-    background: red;
-    border-radius: 50%;
-    border: 2px solid white;
+    width: 32px;
+    height: 32px;
+    background-image: url("https://cdn-icons-png.flaticon.com/512/684/684908.png");
+    background-size: contain;
+    background-repeat: no-repeat;
     position: absolute;
     transform: translate(-50%, -100%);
     cursor: pointer;
+  }
+
+  #zoomPanel {
+    position: absolute;
+    right: 20px;
+    top: 20px;
+    z-index: 2000;
+  }
+
+  #zoomPanel button {
+    width: 40px;
+    height: 40px;
+    font-size: 22px;
+    margin: 3px;
   }
 </style>
 </head>
 
 <body>
 
-<!-- PANEL -->
 <div id="panel">
   <input type="text" id="search" placeholder="Szukaj urządzenia...">
-
   <select id="opcje">
     <option value="">-- wybierz urządzenie --</option>
 <option>B247/P189 – GWINCIARKA 1 GWINCIARKA CMARNRM-20.400</option>
@@ -241,10 +248,14 @@
   <div id="wynik"></div>
 </div>
 
-<!-- MAPA -->
+<div id="zoomPanel">
+  <button id="zoomIn">+</button>
+  <button id="zoomOut">−</button>
+</div>
+
 <div id="mapContainer">
   <div id="mapa">
-    <img src="https://krzysztofkrzych.github.io/Mapa/Mapa.jpg" id="mapImage">
+    <img src="Mapa.jpg" id="mapImage">
   </div>
 </div>
 
@@ -279,41 +290,93 @@ document.getElementById('opcje').addEventListener('change', function() {
   });
 });
 
-/* Dodawanie pinów */
+/* PINY + ZAPIS */
 const mapa = document.getElementById('mapa');
+const dropdown = document.getElementById('opcje');
 
+function savePins() {
+  const pins = [...document.querySelectorAll('.pin')].map(pin => ({
+    x: pin.style.left,
+    y: pin.style.top,
+    title: pin.title
+  }));
+  localStorage.setItem("pins", JSON.stringify(pins));
+}
+
+function loadPins() {
+  const pins = JSON.parse(localStorage.getItem("pins") || "[]");
+
+  pins.forEach(p => {
+    const pin = document.createElement('div');
+    pin.className = 'pin';
+    pin.style.left = p.x;
+    pin.style.top = p.y;
+    pin.title = p.title;
+
+    pin.onclick = () => {
+      const option = document.createElement('option');
+      option.textContent = pin.title;
+      dropdown.appendChild(option);
+      pin.remove();
+      savePins();
+    };
+
+    mapa.appendChild(pin);
+
+    /* USUWANIE OPCJI Z LISTY, JEŚLI PIN ISTNIEJE */
+    for (let i = 0; i < dropdown.options.length; i++) {
+      if (dropdown.options[i].text === p.title) {
+        dropdown.remove(i);
+        break;
+      }
+    }
+  });
+}
+
+loadPins();
+
+/* Dodawanie pinów — poprawka zoomu */
 mapa.addEventListener('dragover', e => e.preventDefault());
+
+let zoom = 1;
 
 mapa.addEventListener('drop', e => {
   e.preventDefault();
 
   const rect = mapa.getBoundingClientRect();
-  const x = e.clientX - rect.left;
-  const y = e.clientY - rect.top;
+
+  const x = (e.clientX - rect.left) / zoom;
+  const y = (e.clientY - rect.top) / zoom;
 
   const pin = document.createElement('div');
   pin.className = 'pin';
-  pin.style.left = x + 'px';
-  pin.style.top = y + 'px';
-
+  pin.style.left = x + "px";
+  pin.style.top = y + "px";
   pin.title = window.przeciagany.textContent;
 
-  /* ⭐ klik = usuń pin */
-  pin.onclick = () => pin.remove();
+  pin.onclick = () => {
+    const option = document.createElement('option');
+    option.textContent = pin.title;
+    dropdown.appendChild(option);
+    pin.remove();
+    savePins();
+  };
 
   mapa.appendChild(pin);
 
   window.przeciagany.remove();
   window.przeciagany = null;
+
+  savePins();
 });
 
-/* ⭐ PRZESUWANIE TYLKO PRZY TRZYMANIU MYSZY */
+/* PRZESUWANIE MAPY — poprawka „przyklejania” */
 const mapContainer = document.getElementById('mapContainer');
 let isDragging = false;
 let startScrollLeft, startScrollTop, startX, startY;
 
 mapContainer.addEventListener('mousedown', e => {
-  if (e.target.classList.contains('pin')) return;  // nie ruszaj mapy gdy klikam pin
+  if (e.target.classList.contains('pin')) return;
 
   isDragging = true;
   startScrollLeft = mapContainer.scrollLeft;
@@ -326,12 +389,38 @@ document.addEventListener('mouseup', () => {
   isDragging = false;
 });
 
+mapContainer.addEventListener('mouseleave', () => {
+  isDragging = false;
+});
+
 document.addEventListener('mousemove', e => {
   if (!isDragging) return;
   const dx = e.clientX - startX;
   const dy = e.clientY - startY;
   mapContainer.scrollLeft = startScrollLeft - dx;
   mapContainer.scrollTop = startScrollTop - dy;
+});
+
+/* ZOOM */
+function applyZoom() {
+  mapa.style.transform = `scale(${zoom})`;
+}
+
+document.getElementById('zoomIn').onclick = () => {
+  zoom += 0.1;
+  applyZoom();
+};
+
+document.getElementById('zoomOut').onclick = () => {
+  zoom = Math.max(0.2, zoom - 0.1);
+  applyZoom();
+};
+
+mapContainer.addEventListener('wheel', e => {
+  e.preventDefault();
+  zoom += (e.deltaY < 0 ? 0.05 : -0.05);
+  zoom = Math.max(0.2, Math.min(3, zoom));
+  applyZoom();
 });
 </script>
 
