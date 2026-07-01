@@ -309,25 +309,36 @@ document.getElementById('opcje').addEventListener('change', function() {
   });
 });
 
-/* PINY + ZAPIS */
+/* PINY — WSPÓLNA BAZA (Google Apps Script + Arkusz Google) */
+const API_URL = "https://script.google.com/macros/s/AKfycby92qY1IUhvvwmfhCfUVok4QHM2N6wASDQYFpimvplN_TalGgrVjUG9FreAIIDhztTe/exec";
+
 const mapa = document.getElementById('mapa');
 const dropdown = document.getElementById('opcje');
-
-function savePins() {
-  const pins = [...document.querySelectorAll('.pin')].map(pin => ({
-    x: pin.style.left,
-    y: pin.style.top,
-    title: pin.title
-  }));
-  localStorage.setItem("pins", JSON.stringify(pins));
-}
+const trackedPins = new Map(); // id -> element .pin
 
 const PIN_SIZE = 32;      // naturalny rozmiar pinezki (px)
 const MIN_PIN_SIZE = 24;  // minimalny widoczny rozmiar pinezki przy oddaleniu (px)
 
-function createPin(x, y, title) {
+function removeDropdownOptionByTitle(title) {
+  for (let i = 0; i < dropdown.options.length; i++) {
+    if (dropdown.options[i].text === title) {
+      dropdown.remove(i);
+      return true;
+    }
+  }
+  return false;
+}
+
+function addDropdownOption(title) {
+  const option = document.createElement('option');
+  option.textContent = title;
+  dropdown.appendChild(option);
+}
+
+function createPinElement(id, x, y, title) {
   const pin = document.createElement('div');
   pin.className = 'pin';
+  pin.dataset.id = id;
   pin.style.left = x;
   pin.style.top = y;
   pin.title = title;
@@ -336,35 +347,83 @@ function createPin(x, y, title) {
   icon.className = 'pin-icon';
   pin.appendChild(icon);
 
-  pin.onclick = () => {
-    const option = document.createElement('option');
-    option.textContent = pin.title;
-    dropdown.appendChild(option);
-    pin.remove();
-    savePins();
-  };
+  pin.onclick = () => deletePin(id, title);
 
   return pin;
 }
 
-function loadPins() {
-  const pins = JSON.parse(localStorage.getItem("pins") || "[]");
-
-  pins.forEach(p => {
-    const pin = createPin(p.x, p.y, p.title);
-    mapa.appendChild(pin);
-
-    /* USUWANIE OPCJI Z LISTY, JEŚLI PIN ISTNIEJE */
-    for (let i = 0; i < dropdown.options.length; i++) {
-      if (dropdown.options[i].text === p.title) {
-        dropdown.remove(i);
-        break;
-      }
+async function addPin(x, y, title) {
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'add', x, y, title })
+    });
+    const data = await res.json();
+    if (data.success) {
+      const pin = createPinElement(data.id, x, y, title);
+      mapa.appendChild(pin);
+      trackedPins.set(data.id, pin);
+    } else {
+      alert('Nie udało się zapisać pinezki na serwerze.');
     }
-  });
+  } catch (err) {
+    console.error('Błąd zapisu pinezki:', err);
+    alert('Brak połączenia z serwerem pinezek — sprawdź internet i spróbuj ponownie.');
+  }
 }
 
-loadPins();
+async function deletePin(id, title) {
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'delete', id })
+    });
+    const data = await res.json();
+    if (data.success) {
+      const pin = trackedPins.get(id);
+      if (pin) pin.remove();
+      trackedPins.delete(id);
+      addDropdownOption(title);
+    }
+  } catch (err) {
+    console.error('Błąd usuwania pinezki:', err);
+  }
+}
+
+async function syncPins() {
+  try {
+    const res = await fetch(API_URL);
+    const serverPins = await res.json(); // [{id, x, y, title}, ...]
+    const serverIds = new Set(serverPins.map(p => String(p.id)));
+
+    // dodaj piny, które są na serwerze, a jeszcze nie ma ich lokalnie
+    serverPins.forEach(p => {
+      const id = String(p.id);
+      if (!trackedPins.has(id)) {
+        const pin = createPinElement(id, p.x, p.y, p.title);
+        mapa.appendChild(pin);
+        trackedPins.set(id, pin);
+        removeDropdownOptionByTitle(p.title);
+      }
+    });
+
+    // usuń lokalnie piny, których ktoś inny już nie ma (skasował je)
+    trackedPins.forEach((pin, id) => {
+      if (!serverIds.has(id)) {
+        pin.remove();
+        trackedPins.delete(id);
+        addDropdownOption(pin.title);
+      }
+    });
+  } catch (err) {
+    console.error('Błąd synchronizacji pinezek:', err);
+  }
+}
+
+syncPins();
+setInterval(syncPins, 10000); // odświeżanie co 10 sekund
 
 /* Dodawanie pinów — poprawka zoomu */
 mapa.addEventListener('dragover', e => e.preventDefault());
@@ -379,14 +438,12 @@ mapa.addEventListener('drop', e => {
   const x = (e.clientX - rect.left) / zoom;
   const y = (e.clientY - rect.top) / zoom;
 
-  const pin = createPin(x + "px", y + "px", window.przeciagany.textContent);
-  mapa.appendChild(pin);
+  addPin(x + "px", y + "px", window.przeciagany.textContent);
 
   window.przeciagany.remove();
   window.przeciagany = null;
-
-  savePins();
 });
+
 
 /* PRZESUWANIE MAPY — poprawka „przyklejania” */
 const mapContainer = document.getElementById('mapContainer');
